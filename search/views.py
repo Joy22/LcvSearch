@@ -5,6 +5,9 @@ from django.http import HttpResponse
 from search.models import ArticleType
 
 import json
+import redis
+
+redis_cli = redis.StrictRedis()
 
 # Create your views here.
 class IndexView(View):
@@ -14,7 +17,15 @@ class IndexView(View):
 
 class SearchView(View):
     def get(self, request):
-        return render(request, "result.html")
+        key_word = request.GET.get("q", "")
+
+        # redis关键词加1
+        redis_cli.zincrby("search_keywords_set", key_word)
+
+        # 逆序排列热门搜索，取前5个
+        hot_search = redis_cli.zrevrangebyscore("search_keywords_set", "+inf", "-inf", start=0, num=5)
+
+        return render(request, "result.html", {"hot_search": hot_search})
 
 
 class SearchSuggestView(View):

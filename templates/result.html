@@ -495,9 +495,9 @@ Gnome Terminal 是最受欢迎的终端仿真器之一，
             	<div class="hotSearch">
                 	<h6>热门搜索</h6>
                     <ul class="historyList">
-                        
-                            <li><a href="/search?q=linux">linux</a></li>
-                        
+                        {% for search_word in hot_search %}
+                            <li><a href="/search?q={{ search_word }}">{{ search_word }}</a></li>
+                        {% endfor %}
                     </ul>
                 </div>
                 <div class="mySearch">
