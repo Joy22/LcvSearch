@@ -24,11 +24,7 @@ class IndexView(View):
 class SearchView(View):
     def get(self, request):
         keyword = request.GET.get("q", "")
-        page = request.GET.get("p", "1")
-        try:
-            page = int(page)
-        except:
-            page = 1
+        page = self.__trans_page(request.GET.get("p", "1"))
 
         # redis关键词加1
         redis_cli.zincrby("search_keywords_set", keyword)
@@ -42,9 +38,12 @@ class SearchView(View):
 
         hit_list, total_nums = self.__parse_search_response(response)
 
+        jobbole_count = redis_cli.get("jobbole_count")
+
         return render(request, "result.html",
                       {"hot_search": hot_search, "all_hits": hit_list, "total_nums": total_nums,
-                       "last_seconds": last_seconds, "page_nums": self.__get_page_nums(total_nums), "keyword": keyword})
+                       "last_seconds": last_seconds, "page_nums": self.__get_page_nums(total_nums), "keyword": keyword,
+                       "jobbole_count": jobbole_count})
 
     @staticmethod
     def __get_search_response(keyword, page):
@@ -99,6 +98,14 @@ class SearchView(View):
         else:
             page_nums = int(total_nums / 10)
         return page_nums
+
+    @staticmethod
+    def __trans_page(page):
+        try:
+            page = int(page)
+        except:
+            page = 1
+        return page
 
 
 class SearchSuggestView(View):
