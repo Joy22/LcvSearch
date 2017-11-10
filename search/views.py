@@ -12,7 +12,9 @@ redis_cli = redis.StrictRedis()
 # Create your views here.
 class IndexView(View):
     def get(self, request):
-        return render(request, "index.html")
+        # 逆序排列热门搜索，取前5个
+        hot_search = redis_cli.zrevrangebyscore("search_keywords_set", "+inf", "-inf", start=0, num=5)
+        return render(request, "index.html", {"hot_search": hot_search})
 
 
 class SearchView(View):
@@ -22,7 +24,6 @@ class SearchView(View):
         # redis关键词加1
         redis_cli.zincrby("search_keywords_set", key_word)
 
-        # 逆序排列热门搜索，取前5个
         hot_search = redis_cli.zrevrangebyscore("search_keywords_set", "+inf", "-inf", start=0, num=5)
 
         return render(request, "result.html", {"hot_search": hot_search})
