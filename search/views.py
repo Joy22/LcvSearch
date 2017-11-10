@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views.generic.base import View
 from django.http import HttpResponse
 from elasticsearch import Elasticsearch
+from datetime import datetime
 
 from search.models import ArticleType
 
@@ -34,11 +35,16 @@ class SearchView(View):
 
         hot_search = redis_cli.zrevrangebyscore("search_keywords_set", "+inf", "-inf", start=0, num=5)
 
+        start_time = datetime.now()
         response = self.__get_search_response(keyword, page)
+        end_time = datetime.now()
+        last_seconds = (end_time - start_time).total_seconds()
+
         hit_list, total_nums = self.__parse_search_response(response)
 
         return render(request, "result.html",
-                      {"hot_search": hot_search, "all_hits": hit_list, "total_nums": total_nums})
+                      {"hot_search": hot_search, "all_hits": hit_list, "total_nums": total_nums,
+                       "last_seconds": last_seconds, "page_nums": self.__get_page_nums(total_nums), "keyword": keyword})
 
     @staticmethod
     def __get_search_response(keyword, page):
@@ -85,6 +91,14 @@ class SearchView(View):
 
         total_nums = response["hits"]["total"]
         return hit_list, total_nums
+
+    @staticmethod
+    def __get_page_nums(total_nums):
+        if total_nums % 10 > 0:
+            page_nums = int(total_nums / 10) + 1
+        else:
+            page_nums = int(total_nums / 10)
+        return page_nums
 
 
 class SearchSuggestView(View):
